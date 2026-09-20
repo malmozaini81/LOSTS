@@ -1,0 +1,106 @@
+(* ================================================================
+   OTANet UDP OTA – Flat Tuple Specification Model: mohammed hasan almozaini 
+   Matches actual packets:
+     header:<admin_ip>:<admin_mac>:<ver>:<size>:<num>:<chunk_size>:<sha256>:<sig>
+     CHUNK:<idx>:<crc>:<data>
+     LOSTS:<device_mac>:<list>:<dev_sig>
+   ================================================================ *)
+
+free c: channel.
+
+(* Custom Types *)
+type host.
+type key.
+type version.
+type firmware.
+type hashvalue.
+type signature.
+
+free Admin: host.
+free Device: host.
+
+fun pk(key): key.
+fun sign(bitstring, key): signature.
+reduc forall m: bitstring, sk: key;
+      verify(sign(m, sk), pk(sk)) = m.
+
+fun hash(firmware): hashvalue.
+
+(* protocol version tracking constants *)
+const current_version: version.
+const newer_version: version.
+
+(* Active Tracked Security Events *)
+event adminSendsFirmware(firmware).
+event deviceAcceptsFirmware(firmware).
+event adminProcessesLOSTS(host).
+
+(* ================================================================
+   SECURITY QUERIES 
+   ================================================================ *)
+
+(* 1. Authentication Check *)
+query fw: firmware;
+      event(deviceAcceptsFirmware(fw)) ==> event(adminSendsFirmware(fw)).
+
+(* 2. Device Identity Verification Check for LOSTS *)
+query hst: host;
+      event(adminProcessesLOSTS(hst)) ==> hst = Device.
+
+(* ================================================================
+   ADMIN PROCESS (Laptop Server)
+   ================================================================ *)
+let admin(skA: key, pkD: key) =
+    new fw: firmware;
+    (* Package fields natively into clear, standard applied-pi calculus tuples *)
+    let header_payload = (newer_version, hash(fw)) in
+    let sigA = sign(header_payload, skA) in
+    event adminSendsFirmware(fw);
+    out(c, (header_payload, sigA));
+    out(c, fw);
+
+    (* Process signed NACK requests *)
+    in(c, (lostMsg: bitstring, devSig: signature));
+    let verified_lost = verify(devSig, pkD) in
+    if lostMsg = verified_lost then
+        (* Destruct tuple fields inline automatically *)
+        let (sender_identity: host, chunk_list: bitstring) = lostMsg in
+        event adminProcessesLOSTS(sender_identity).
+
+(* ================================================================
+   DEVICE PROCESS (ESP32 Client)
+   ================================================================ *)
+let device(pkA: key, skD: key) =
+    in(c, (header_bytes: bitstring, sigA: signature));
+    let verified_header = verify(sigA, pkA) in
+    if header_bytes = verified_header then
+        (* Destruct header fields inline automatically with zero custom functions *)
+        let (ver: version, h: hashvalue) = header_bytes in
+        
+        (* Stateless Anti-Rollback validation: Explicitly check for newer_version match *)
+        if ver = newer_version then
+            in(c, fw_received: firmware);
+            if hash(fw_received) = h then
+            (
+                event deviceAcceptsFirmware(fw_received);
+                
+                (* Construct and sign the LOSTS payload text block natively *)
+                new dummy_list: bitstring;
+                let lost_payload = (Device, dummy_list) in
+                let dev_sig = sign(lost_payload, skD) in
+                out(c, (lost_payload, dev_sig))
+            )
+            else 0
+        else 0
+    else 0.
+
+(* ================================================================
+   MAIN SYSTEM ENTRY POINT
+   ================================================================ *)
+process
+    new skA: key;
+    new skD: key;
+    let pkA = pk(skA) in
+    let pkD = pk(skD) in
+    out(c, (pkA, pkD));
+    ( admin(skA, pkD) | device(pkA, skD) )

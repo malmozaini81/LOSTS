@@ -1,0 +1,92 @@
+C:\Users\x\Desktop\proverif2.05>proverif.exe secure_ota.pv
+Process 0 (that is, the initial process):
+{1}new skA: key;
+{2}new skD: key;
+{3}let pkA: key = pk(skA) in
+{4}let pkD: key = pk(skD) in
+{5}out(c, (pkA,pkD));
+(
+    {6}let skA_1: key = skA in
+    {7}new fw: firmware;
+    {8}let header_payload: bitstring = (newer_version,hash(fw)) in
+    {9}let sigA: signature = sign(header_payload,skA_1) in
+    {10}event adminSendsFirmware(fw);
+    {11}out(c, (header_payload,sigA));
+    {12}out(c, fw);
+    {13}in(c, (lostMsg: bitstring,devSig: signature));
+    {14}let verified_lost: bitstring = verify(devSig,pkD) in
+    {15}if (lostMsg = verified_lost) then
+    {16}let (sender_identity: host,chunk_list: bitstring) = lostMsg in
+    {17}event adminProcessesLOSTS(sender_identity)
+) | (
+    {18}let skD_1: key = skD in
+    {19}in(c, (header_bytes: bitstring,sigA_1: signature));
+    {20}let verified_header: bitstring = verify(sigA_1,pkA) in
+    {21}if (header_bytes = verified_header) then
+    {22}let (ver: version,h: hashvalue) = header_bytes in
+    {23}if (ver = newer_version) then
+    {24}in(c, fw_received: firmware);
+    {25}if (hash(fw_received) = h) then
+    {26}event deviceAcceptsFirmware(fw_received);
+    {27}new dummy_list: bitstring;
+    {28}let lost_payload: bitstring = (Device,dummy_list) in
+    {29}let dev_sig: signature = sign(lost_payload,skD_1) in
+    {30}out(c, (lost_payload,dev_sig))
+)
+
+--  Process 1 (that is, process 0, with let moved downwards):
+{1}new skA: key;
+{2}new skD: key;
+{4}let pkD: key = pk(skD) in
+{3}let pkA: key = pk(skA) in
+{5}out(c, (pkA,pkD));
+(
+    {7}new fw: firmware;
+    {10}event adminSendsFirmware(fw);
+    {8}let header_payload: bitstring = (newer_version,hash(fw)) in
+    {6}let skA_1: key = skA in
+    {9}let sigA: signature = sign(header_payload,skA_1) in
+    {11}out(c, (header_payload,sigA));
+    {12}out(c, fw);
+    {13}in(c, (lostMsg: bitstring,devSig: signature));
+    {14}let verified_lost: bitstring = verify(devSig,pkD) in
+    {15}if (lostMsg = verified_lost) then
+    {16}let (sender_identity: host,chunk_list: bitstring) = lostMsg in
+    {17}event adminProcessesLOSTS(sender_identity)
+) | (
+    {19}in(c, (header_bytes: bitstring,sigA_1: signature));
+    {20}let verified_header: bitstring = verify(sigA_1,pkA) in
+    {21}if (header_bytes = verified_header) then
+    {22}let (ver: version,h: hashvalue) = header_bytes in
+    {23}if (ver = newer_version) then
+    {24}in(c, fw_received: firmware);
+    {25}if (hash(fw_received) = h) then
+    {26}event deviceAcceptsFirmware(fw_received);
+    {27}new dummy_list: bitstring;
+    {28}let lost_payload: bitstring = (Device,dummy_list) in
+    {18}let skD_1: key = skD in
+    {29}let dev_sig: signature = sign(lost_payload,skD_1) in
+    {30}out(c, (lost_payload,dev_sig))
+)
+
+-- Query event(deviceAcceptsFirmware(fw_1)) ==> event(adminSendsFirmware(fw_1)) in process 1.
+Translating the process into Horn clauses...
+Completing...
+Starting query event(deviceAcceptsFirmware(fw_1)) ==> event(adminSendsFirmware(fw_1))
+goal reachable: b-event(adminSendsFirmware(fw[])) -> event(deviceAcceptsFirmware(fw[]))
+RESULT event(deviceAcceptsFirmware(fw_1)) ==> event(adminSendsFirmware(fw_1)) is true.
+-- Query event(adminProcessesLOSTS(hst)) ==> hst = Device[] in process 1.
+Translating the process into Horn clauses...
+Completing...
+Starting query event(adminProcessesLOSTS(hst)) ==> hst = Device[]
+goal reachable: event(adminProcessesLOSTS(Device[]))
+RESULT event(adminProcessesLOSTS(hst)) ==> hst = Device[] is true.
+
+--------------------------------------------------------------
+Verification summary:
+
+Query event(deviceAcceptsFirmware(fw_1)) ==> event(adminSendsFirmware(fw_1)) is true.
+
+Query event(adminProcessesLOSTS(hst)) ==> hst = Device[] is true.
+
+--------------------------------------------------------------
