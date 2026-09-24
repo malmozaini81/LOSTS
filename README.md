@@ -51,13 +51,25 @@ The implementation uses:
 
 ## Formal Verification
 
-The repository includes the ProVerif model used to evaluate the protocol's
-authentication properties.
+The repository includes the ProVerif 2.05 model used to formally analyze the
+protocol under the Dolev–Yao adversary model.
 
-The formal analysis verifies:
+The formal analysis evaluates:
 
-- Firmware authenticity
-- Recovery-request authentication
+- Firmware injection through firmware-authenticity verification
+- Forged recovery requests through recovery-request authentication
+- Request flooding at the authentication level using replicated request handling
+- Firmware tampering through firmware-integrity verification
+- Downgrade attacks through firmware-freshness verification
+- Recovery-request replay through injective recovery authentication
+
+ProVerif verified firmware authenticity, recovery-request authentication,
+firmware integrity, and firmware freshness. Under replicated recovery-request
+handling, forged requests could not reach authenticated recovery processing.
+
+The injective recovery-authentication query identified a replay limitation:
+a previously valid signed recovery request can be processed more than once,
+potentially causing redundant chunk rebroadcast.
 
 The ProVerif model and corresponding verification results are included with
 the project files.
@@ -81,10 +93,10 @@ the implemented security mechanisms. Under the evaluated flooding condition,
 forged requests were continuously rejected without triggering unauthorized
 recovery and without a substantial observed system-level CPU load.
 
-The replay experiment demonstrated that a previously captured valid recovery
-request can be accepted and can trigger redundant chunk rebroadcast. This is
-documented as a limitation of the current protocol and does not bypass firmware
-authentication.
+The replay experiment reproduced the limitation identified by the formal
+analysis: a previously captured valid recovery request can be accepted and can
+trigger redundant chunk rebroadcast. This does not bypass firmware
+authentication or cause unauthorized firmware installation.
 
 ## Experimental Evidence
 
