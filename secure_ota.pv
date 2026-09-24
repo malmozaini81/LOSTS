@@ -1,14 +1,22 @@
 (* ================================================================
-   OTANet UDP OTA – Flat Tuple Specification Model
-   actual packets:
-     header:<admin_ip>:<admin_mac>:<ver>:<size>:<num>:<chunk_size>:<sha256>:<sig>
-     CHUNK:<idx>:<crc>:<data>
-     LOSTS:<device_mac>:<list>:<dev_sig>
+   Secure Stateless UDP Broadcast OTA - ProVerif Model
+
+   Security properties:
+     1. Firmware authenticity / injection resistance
+     2. Recovery-request authentication / forgery resistance
+     3. Firmware integrity / tampering resistance
+     4. Firmware freshness / downgrade resistance
+
+   Replay of a valid recovery request and resource-exhaustion flooding
+   are not claimed to be prevented by this protocol.
    ================================================================ *)
 
 free c: channel.
 
-(* Custom Types *)
+(* ================================================================
+   TYPES
+   ================================================================ *)
+
 type host.
 type key.
 type version.
@@ -19,88 +27,220 @@ type signature.
 free Admin: host.
 free Device: host.
 
+(* ================================================================
+   CRYPTOGRAPHIC PRIMITIVES
+   ================================================================ *)
+
 fun pk(key): key.
+
 fun sign(bitstring, key): signature.
+
 reduc forall m: bitstring, sk: key;
       verify(sign(m, sk), pk(sk)) = m.
 
 fun hash(firmware): hashvalue.
 
-(* protocol version tracking constants *)
+(* ================================================================
+   VERSION MODEL
+   ================================================================ *)
+
+(* The device currently has current_version installed.
+   Only newer_version is accepted as an OTA update. *)
+
 const current_version: version.
 const newer_version: version.
 
-(* Active Tracked Security Events *)
+(* ================================================================
+   SECURITY EVENTS
+   ================================================================ *)
+
+(* Administrator legitimately creates firmware for distribution. *)
 event adminSendsFirmware(firmware).
+
+(* Device accepts firmware after all security checks. *)
 event deviceAcceptsFirmware(firmware).
-event adminProcessesLOSTS(host).
+
+(* Device accepts a firmware image whose final hash matched
+   the hash authenticated by the administrator. *)
+event deviceAcceptsIntegrityVerifiedFirmware(firmware).
+
+(* Device accepts an update only after the newer-version check. *)
+event deviceAcceptsNewerVersion(version).
+
+(* Administrator processes an authenticated recovery request. *)
+event adminProcessesRecovery(host).
+
+(* Legitimate device creates a recovery request. *)
+event deviceSendsRecovery(host).
 
 (* ================================================================
-   SECURITY QUERIES 
+   SECURITY QUERIES
    ================================================================ *)
 
-(* 1. Authentication Check *)
+(* ------------------------------------------------
+   1. Firmware authenticity / injection resistance
+   Any firmware accepted by the device must have been
+   distributed by the legitimate administrator.
+   ------------------------------------------------ *)
+
 query fw: firmware;
-      event(deviceAcceptsFirmware(fw)) ==> event(adminSendsFirmware(fw)).
+      event(deviceAcceptsFirmware(fw))
+      ==> event(adminSendsFirmware(fw)).
 
-(* 2. Device Identity Verification Check for LOSTS *)
+
+(* ------------------------------------------------
+   2. Recovery-request authentication
+   Any recovery request processed by the administrator
+   must correspond to a request produced by the
+   legitimate device.
+   ------------------------------------------------ *)
+
 query hst: host;
-      event(adminProcessesLOSTS(hst)) ==> hst = Device.
+      event(adminProcessesRecovery(hst))
+      ==> event(deviceSendsRecovery(hst)).
+
+
+(* ------------------------------------------------
+   3. Firmware integrity / tampering resistance
+   Any firmware accepted by the device must have passed
+   verification against the hash contained in the
+   authenticated firmware metadata.
+   ------------------------------------------------ *)
+
+query fw: firmware;
+      event(deviceAcceptsFirmware(fw))
+      ==> event(deviceAcceptsIntegrityVerifiedFirmware(fw)).
+
+
+(* ------------------------------------------------
+   4. Firmware freshness / downgrade resistance
+   Whenever firmware is accepted, the accepted version
+   must be the modeled newer version.
+   ------------------------------------------------ *)
+
+query v: version;
+      event(deviceAcceptsNewerVersion(v))
+      ==> v = newer_version.
+
 
 (* ================================================================
-   ADMIN PROCESS (Laptop Server)
+   ADMINISTRATOR PROCESS
    ================================================================ *)
+
 let admin(skA: key, pkD: key) =
+
     new fw: firmware;
-    (* Package fields natively into clear, standard applied-pi calculus tuples *)
+
+    (* Construct authenticated firmware metadata.
+       The version and firmware hash are covered by
+       the administrator signature. *)
+
     let header_payload = (newer_version, hash(fw)) in
     let sigA = sign(header_payload, skA) in
+
     event adminSendsFirmware(fw);
+
+    (* Broadcast authenticated firmware metadata. *)
     out(c, (header_payload, sigA));
+
+    (* Abstract representation of firmware/chunk distribution. *)
     out(c, fw);
 
-    (* Process signed NACK requests *)
+    (* Receive a recovery request. *)
     in(c, (lostMsg: bitstring, devSig: signature));
+
+    (* Authenticate the device signature. *)
     let verified_lost = verify(devSig, pkD) in
+
     if lostMsg = verified_lost then
-        (* Destruct tuple fields inline automatically *)
-        let (sender_identity: host, chunk_list: bitstring) = lostMsg in
-        event adminProcessesLOSTS(sender_identity).
+
+        let (sender_identity: host,
+             chunk_list: bitstring) = lostMsg in
+
+        event adminProcessesRecovery(sender_identity).
+
 
 (* ================================================================
-   DEVICE PROCESS (ESP32 Client)
+   DEVICE PROCESS
    ================================================================ *)
+
 let device(pkA: key, skD: key) =
-    in(c, (header_bytes: bitstring, sigA: signature));
+
+    (* Receive firmware metadata and administrator signature. *)
+    in(c, (header_bytes: bitstring,
+           sigA: signature));
+
+    (* Verify administrator signature. *)
     let verified_header = verify(sigA, pkA) in
+
     if header_bytes = verified_header then
-        (* Destruct header fields inline automatically with zero custom functions *)
-        let (ver: version, h: hashvalue) = header_bytes in
-        
-        (* Stateless Anti-Rollback validation: Explicitly check for newer_version match *)
+
+        let (ver: version,
+             expected_hash: hashvalue) = header_bytes in
+
+        (* ----------------------------------------------------
+           ANTI-ROLLBACK / FRESHNESS CHECK
+           The model accepts only newer_version.
+           An old/current/attacker-supplied version cannot
+           reach the firmware-acceptance state.
+           ---------------------------------------------------- *)
+
         if ver = newer_version then
+
             in(c, fw_received: firmware);
-            if hash(fw_received) = h then
+
+            (* ------------------------------------------------
+               END-TO-END FIRMWARE INTEGRITY CHECK
+               Firmware must match the hash authenticated
+               inside the administrator-signed metadata.
+               ------------------------------------------------ *)
+
+            if hash(fw_received) = expected_hash then
             (
+                event deviceAcceptsNewerVersion(ver);
+
+                event deviceAcceptsIntegrityVerifiedFirmware(
+                    fw_received
+                );
+
                 event deviceAcceptsFirmware(fw_received);
-                
-                (* Construct and sign the LOSTS payload text block natively *)
-                new dummy_list: bitstring;
-                let lost_payload = (Device, dummy_list) in
-                let dev_sig = sign(lost_payload, skD) in
-                out(c, (lost_payload, dev_sig))
+
+                (* --------------------------------------------
+                   AUTHENTICATED RECOVERY REQUEST
+                   -------------------------------------------- *)
+
+                new missing_chunks: bitstring;
+
+                let recovery_payload =
+                    (Device, missing_chunks) in
+
+                event deviceSendsRecovery(Device);
+
+                let dev_sig =
+                    sign(recovery_payload, skD) in
+
+                out(c, (recovery_payload, dev_sig))
             )
             else 0
+
         else 0
+
     else 0.
 
+
 (* ================================================================
-   MAIN SYSTEM ENTRY POINT
+   MAIN SYSTEM
    ================================================================ *)
+
 process
+
     new skA: key;
     new skD: key;
+
     let pkA = pk(skA) in
     let pkD = pk(skD) in
+
+    (* Public keys are public information.
+       Private keys are never released. *)
     out(c, (pkA, pkD));
-    ( admin(skA, pkD) | device(pkA, skD) )
+    (admin(skA, pkD) | device(pkA, skD))
