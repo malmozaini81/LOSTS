@@ -1,5 +1,5 @@
 (* ================================================================
-   OTANet UDP OTA – Flat Tuple Specification Model: mohammed hasan almozaini 
+   OTANet UDP OTA – Flat Tuple Specification Model
    Matches actual packets:
      header:<admin_ip>:<admin_mac>:<ver>:<size>:<num>:<chunk_size>:<sha256>:<sig>
      CHUNK:<idx>:<crc>:<data>
