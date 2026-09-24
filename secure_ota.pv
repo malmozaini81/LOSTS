@@ -1,6 +1,6 @@
 (* ================================================================
    OTANet UDP OTA – Flat Tuple Specification Model
-   Matches actual packets:
+   actual packets:
      header:<admin_ip>:<admin_mac>:<ver>:<size>:<num>:<chunk_size>:<sha256>:<sig>
      CHUNK:<idx>:<crc>:<data>
      LOSTS:<device_mac>:<list>:<dev_sig>
