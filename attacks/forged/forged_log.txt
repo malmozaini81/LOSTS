@@ -1,0 +1,20 @@
+Forged request attack
+(venv) mhz@mohammeds-MacBook-Air testing % python3 admin.py /Users/mhz/Documents/OTANet/build/OTANet.bin
+[*] Own IP: 192.168.0.94, MAC: 2CCA160335E1, Broadcast: 192.168.0.255
+  Firmware: /Users/mhz/Documents/OTANet/build/OTANet.bin
+  Size: 868560 bytes (848.2 KB)
+  Version: 8 (0x00000008)
+  SHA‑256: 12840adb4e6630af071950b5660b8e23701305aa8f24e45bcb2f32dd6e557ac8
+  Chunks: 621 (chunk size 1400)
+Send? (yes/no): yes
+[*] Sending header...
+HEADER:192.168.0.94:2CCA160335E1:00000008:000D40D0:0000026D:0578:12840adb4e6630af071950b5660b8e23701305aa8f24e45bcb2f32dd6e557ac8:da66b45b845a38d38353aa12409cd0c11b6912b027b86626d62bc69441d1fb589b20b5e74ad088b9c64e806030afc656edee1194935c3dd5e69a75e77579f06e
+[*] Sending 621 chunks...
+[DEBUG] Sent chunk 621/621
+[*] All chunks sent. Waiting for missing chunk requests...
+
+[*] Received LOSTS from 192.168.0.21: LOSTS:90E5B1CC2DB8:00000033,00000083,000000D4,00000124,000001C7,00000218,00000269:F3F71F28216B667FD6D5E828B151A548A2B90613F57956878E3C5C78BA6CDE87C3334E9CBFC5D4123B128B32D9A8FAB69E434618B75BC2B3A150E3001B20DCFC
+[!] Invalid signature from 90E5B1CC2DB8, ignoring
+[*] Waiting for further missing requests...
+[*] No missing chunk requests for 10 seconds. OTA complete.
+[+] OTA transmission finished.
