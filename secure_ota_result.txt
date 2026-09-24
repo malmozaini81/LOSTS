@@ -13,28 +13,29 @@ Process 0 (that is, the initial process):
     {10}event adminSendsFirmware(fw);
     {11}out(c, (header_payload,sigA));
     {12}out(c, fw);
-    {13}in(c, (lostMsg: bitstring,devSig: signature));
-    {14}let verified_lost: bitstring = verify(devSig,pkD) in
-    {15}if (lostMsg = verified_lost) then
-    {16}let (sender_identity: host,chunk_list: bitstring) = lostMsg in
-    {17}event adminProcessesRecovery(sender_identity)
+    {13}!
+    {14}in(c, (lostMsg: bitstring,devSig: signature));
+    {15}let verified_lost: bitstring = verify(devSig,pkD) in
+    {16}if (lostMsg = verified_lost) then
+    {17}let (sender_identity: host,chunk_list: bitstring) = lostMsg in
+    {18}event adminProcessesRecovery(sender_identity,lostMsg)
 ) | (
-    {18}let skD_1: key = skD in
-    {19}in(c, (header_bytes: bitstring,sigA_1: signature));
-    {20}let verified_header: bitstring = verify(sigA_1,pkA) in
-    {21}if (header_bytes = verified_header) then
-    {22}let (ver: version,expected_hash: hashvalue) = header_bytes in
-    {23}if (ver = newer_version) then
-    {24}in(c, fw_received: firmware);
-    {25}if (hash(fw_received) = expected_hash) then
-    {26}event deviceAcceptsNewerVersion(ver);
-    {27}event deviceAcceptsIntegrityVerifiedFirmware(fw_received);
-    {28}event deviceAcceptsFirmware(fw_received);
-    {29}new missing_chunks: bitstring;
-    {30}let recovery_payload: bitstring = (Device,missing_chunks) in
-    {31}event deviceSendsRecovery(Device);
-    {32}let dev_sig: signature = sign(recovery_payload,skD_1) in
-    {33}out(c, (recovery_payload,dev_sig))
+    {19}let skD_1: key = skD in
+    {20}in(c, (header_bytes: bitstring,sigA_1: signature));
+    {21}let verified_header: bitstring = verify(sigA_1,pkA) in
+    {22}if (header_bytes = verified_header) then
+    {23}let (ver: version,expected_hash: hashvalue) = header_bytes in
+    {24}if (ver = newer_version) then
+    {25}in(c, fw_received: firmware);
+    {26}if (hash(fw_received) = expected_hash) then
+    {27}event deviceAcceptsNewerVersion(ver);
+    {28}event deviceAcceptsIntegrityVerifiedFirmware(fw_received);
+    {29}event deviceAcceptsFirmware(fw_received);
+    {30}new missing_chunks: bitstring;
+    {31}let recovery_payload: bitstring = (Device,missing_chunks) in
+    {32}event deviceSendsRecovery(Device,recovery_payload);
+    {33}let dev_sig: signature = sign(recovery_payload,skD_1) in
+    {34}out(c, (recovery_payload,dev_sig))
 )
 
 --  Process 1 (that is, process 0, with let moved downwards):
@@ -51,28 +52,29 @@ Process 0 (that is, the initial process):
     {9}let sigA: signature = sign(header_payload,skA_1) in
     {11}out(c, (header_payload,sigA));
     {12}out(c, fw);
-    {13}in(c, (lostMsg: bitstring,devSig: signature));
-    {14}let verified_lost: bitstring = verify(devSig,pkD) in
-    {15}if (lostMsg = verified_lost) then
-    {16}let (sender_identity: host,chunk_list: bitstring) = lostMsg in
-    {17}event adminProcessesRecovery(sender_identity)
+    {13}!
+    {14}in(c, (lostMsg: bitstring,devSig: signature));
+    {15}let verified_lost: bitstring = verify(devSig,pkD) in
+    {16}if (lostMsg = verified_lost) then
+    {17}let (sender_identity: host,chunk_list: bitstring) = lostMsg in
+    {18}event adminProcessesRecovery(sender_identity,lostMsg)
 ) | (
-    {19}in(c, (header_bytes: bitstring,sigA_1: signature));
-    {20}let verified_header: bitstring = verify(sigA_1,pkA) in
-    {21}if (header_bytes = verified_header) then
-    {22}let (ver: version,expected_hash: hashvalue) = header_bytes in
-    {23}if (ver = newer_version) then
-    {24}in(c, fw_received: firmware);
-    {25}if (hash(fw_received) = expected_hash) then
-    {26}event deviceAcceptsNewerVersion(ver);
-    {27}event deviceAcceptsIntegrityVerifiedFirmware(fw_received);
-    {28}event deviceAcceptsFirmware(fw_received);
-    {29}new missing_chunks: bitstring;
-    {31}event deviceSendsRecovery(Device);
-    {30}let recovery_payload: bitstring = (Device,missing_chunks) in
-    {18}let skD_1: key = skD in
-    {32}let dev_sig: signature = sign(recovery_payload,skD_1) in
-    {33}out(c, (recovery_payload,dev_sig))
+    {20}in(c, (header_bytes: bitstring,sigA_1: signature));
+    {21}let verified_header: bitstring = verify(sigA_1,pkA) in
+    {22}if (header_bytes = verified_header) then
+    {23}let (ver: version,expected_hash: hashvalue) = header_bytes in
+    {24}if (ver = newer_version) then
+    {25}in(c, fw_received: firmware);
+    {26}if (hash(fw_received) = expected_hash) then
+    {27}event deviceAcceptsNewerVersion(ver);
+    {28}event deviceAcceptsIntegrityVerifiedFirmware(fw_received);
+    {29}event deviceAcceptsFirmware(fw_received);
+    {30}new missing_chunks: bitstring;
+    {31}let recovery_payload: bitstring = (Device,missing_chunks) in
+    {32}event deviceSendsRecovery(Device,recovery_payload);
+    {19}let skD_1: key = skD in
+    {33}let dev_sig: signature = sign(recovery_payload,skD_1) in
+    {34}out(c, (recovery_payload,dev_sig))
 )
 
 -- Query event(deviceAcceptsFirmware(fw_1)) ==> event(adminSendsFirmware(fw_1)) in process 1.
@@ -81,12 +83,14 @@ Completing...
 Starting query event(deviceAcceptsFirmware(fw_1)) ==> event(adminSendsFirmware(fw_1))
 goal reachable: b-event(adminSendsFirmware(fw[])) -> event(deviceAcceptsFirmware(fw[]))
 RESULT event(deviceAcceptsFirmware(fw_1)) ==> event(adminSendsFirmware(fw_1)) is true.
--- Query event(adminProcessesRecovery(hst)) ==> event(deviceSendsRecovery(hst)) in process 1.
+-- Query event(adminProcessesRecovery(h,msg)) ==> event(deviceSendsRecovery(h,msg)) in process 1.
 Translating the process into Horn clauses...
 Completing...
-Starting query event(adminProcessesRecovery(hst)) ==> event(deviceSendsRecovery(hst))
-goal reachable: b-event(deviceSendsRecovery(Device[])) -> event(adminProcessesRecovery(Device[]))
-RESULT event(adminProcessesRecovery(hst)) ==> event(deviceSendsRecovery(hst)) is true.
+Starting query event(adminProcessesRecovery(h,msg)) ==> event(deviceSendsRecovery(h,msg))
+goal reachable: b-event(deviceSendsRecovery(Device[],(Device[],missing_chunks_1))) -> event(adminProcessesRecovery(Device[],(Device[],missing_chunks_1)))
+Abbreviations:
+missing_chunks_1 = missing_chunks[fw_received = fw[],sigA_1 = sign((newer_version,hash(fw[])),skA[]),header_bytes = (newer_version,hash(fw[]))]
+RESULT event(adminProcessesRecovery(h,msg)) ==> event(deviceSendsRecovery(h,msg)) is true.
 -- Query event(deviceAcceptsFirmware(fw_1)) ==> event(deviceAcceptsIntegrityVerifiedFirmware(fw_1)) in process 1.
 Translating the process into Horn clauses...
 Completing...
@@ -99,16 +103,167 @@ Completing...
 Starting query event(deviceAcceptsNewerVersion(v)) ==> v = newer_version
 goal reachable: event(deviceAcceptsNewerVersion(newer_version))
 RESULT event(deviceAcceptsNewerVersion(v)) ==> v = newer_version is true.
+-- Query inj-event(adminProcessesRecovery(h,msg)) ==> inj-event(deviceSendsRecovery(h,msg)) in process 1.
+Translating the process into Horn clauses...
+Completing...
+Starting query inj-event(adminProcessesRecovery(h,msg)) ==> inj-event(deviceSendsRecovery(h,msg))
+goal reachable: @sid ≠ @sid_1 && b-inj-event(deviceSendsRecovery(Device[],(Device[],missing_chunks_1)),@occ32_1) -> inj-event(adminProcessesRecovery(Device[],(Device[],missing_chunks_1)),@occ18_1) && inj-event(adminProcessesRecovery(Device[],(Device[],missing_chunks_1)),@occ18_2)
+Abbreviations:
+missing_chunks_1 = missing_chunks[fw_received = fw[],sigA_1 = sign((newer_version,hash(fw[])),skA[]),header_bytes = (newer_version,hash(fw[]))]
+@occ18_1 = @occ18[devSig = sign((Device[],missing_chunks_1),skD[]),lostMsg = (Device[],missing_chunks_1),!1 = @sid]
+@occ18_2 = @occ18[devSig = sign((Device[],missing_chunks_1),skD[]),lostMsg = (Device[],missing_chunks_1),!1 = @sid_1]
+@occ32_1 = @occ32[fw_received = fw[],sigA_1 = sign((newer_version,hash(fw[])),skA[]),header_bytes = (newer_version,hash(fw[]))]
+
+Derivation:
+Abbreviations:
+missing_chunks_1 = missing_chunks[fw_received = fw[],sigA_1 = sign((newer_version,hash(fw[])),skA[]),header_bytes = (newer_version,hash(fw[]))]
+@occ18_1 = @occ18[devSig = sign((Device[],missing_chunks_1),skD[]),lostMsg = (Device[],missing_chunks_1),!1 = @sid]
+@occ18_2 = @occ18[devSig = sign((Device[],missing_chunks_1),skD[]),lostMsg = (Device[],missing_chunks_1),!1 = @sid_1]
+@occ32_1 = @occ32[fw_received = fw[],sigA_1 = sign((newer_version,hash(fw[])),skA[]),header_bytes = (newer_version,hash(fw[]))]
+
+1. The message ((newer_version,hash(fw[])),sign((newer_version,hash(fw[])),skA[])) may be sent to the attacker at output {11}.
+attacker(((newer_version,hash(fw[])),sign((newer_version,hash(fw[])),skA[]))).
+
+2. By 1, the attacker may know ((newer_version,hash(fw[])),sign((newer_version,hash(fw[])),skA[])).
+Using the function 2-proj-2-tuple the attacker may obtain sign((newer_version,hash(fw[])),skA[]).
+attacker(sign((newer_version,hash(fw[])),skA[])).
+
+3. By 1, the attacker may know ((newer_version,hash(fw[])),sign((newer_version,hash(fw[])),skA[])).
+Using the function 1-proj-2-tuple the attacker may obtain (newer_version,hash(fw[])).
+attacker((newer_version,hash(fw[]))).
+
+4. By 3, the attacker may know (newer_version,hash(fw[])).
+Using the function 2-proj-2-tuple the attacker may obtain hash(fw[]).
+attacker(hash(fw[])).
+
+5. Using the function newer_version the attacker may obtain newer_version.
+attacker(newer_version).
+
+6. By 5, the attacker may know newer_version.
+By 4, the attacker may know hash(fw[]).
+Using the function 2-tuple the attacker may obtain (newer_version,hash(fw[])).
+attacker((newer_version,hash(fw[]))).
+
+7. By 6, the attacker may know (newer_version,hash(fw[])).
+By 2, the attacker may know sign((newer_version,hash(fw[])),skA[]).
+Using the function 2-tuple the attacker may obtain ((newer_version,hash(fw[])),sign((newer_version,hash(fw[])),skA[])).
+attacker(((newer_version,hash(fw[])),sign((newer_version,hash(fw[])),skA[]))).
+
+8. The message fw[] may be sent to the attacker at output {12}.
+attacker(fw[]).
+
+9. The message ((newer_version,hash(fw[])),sign((newer_version,hash(fw[])),skA[])) that the attacker may have by 7 may be received at input {20}.
+The message fw[] that the attacker may have by 8 may be received at input {25}.
+The event deviceSendsRecovery(Device[],(Device[],missing_chunks_1)) (with occurrence name @occ32_1) may be executed at {32}.
+So the message ((Device[],missing_chunks_1),sign((Device[],missing_chunks_1),skD[])) may be sent to the attacker at output {34}.
+attacker(((Device[],missing_chunks_1),sign((Device[],missing_chunks_1),skD[]))).
+
+10. By 9, the attacker may know ((Device[],missing_chunks_1),sign((Device[],missing_chunks_1),skD[])).
+Using the function 2-proj-2-tuple the attacker may obtain sign((Device[],missing_chunks_1),skD[]).
+attacker(sign((Device[],missing_chunks_1),skD[])).
+
+11. By 9, the attacker may know ((Device[],missing_chunks_1),sign((Device[],missing_chunks_1),skD[])).
+Using the function 1-proj-2-tuple the attacker may obtain (Device[],missing_chunks_1).
+attacker((Device[],missing_chunks_1)).
+
+12. By 11, the attacker may know (Device[],missing_chunks_1).
+Using the function 2-proj-2-tuple the attacker may obtain missing_chunks_1.
+attacker(missing_chunks_1).
+
+13. The attacker initially knows Device[].
+attacker(Device[]).
+
+14. By 13, the attacker may know Device[].
+By 12, the attacker may know missing_chunks_1.
+Using the function 2-tuple the attacker may obtain (Device[],missing_chunks_1).
+attacker((Device[],missing_chunks_1)).
+
+15. By 14, the attacker may know (Device[],missing_chunks_1).
+By 10, the attacker may know sign((Device[],missing_chunks_1),skD[]).
+Using the function 2-tuple the attacker may obtain ((Device[],missing_chunks_1),sign((Device[],missing_chunks_1),skD[])).
+attacker(((Device[],missing_chunks_1),sign((Device[],missing_chunks_1),skD[]))).
+
+16. The message ((Device[],missing_chunks_1),sign((Device[],missing_chunks_1),skD[])) that the attacker may have by 15 may be received at input {14}.
+So event adminProcessesRecovery(Device[],(Device[],missing_chunks_1)) may be executed at {18} in session @sid_1.
+inj-event(adminProcessesRecovery(Device[],(Device[],missing_chunks_1)),@occ18_2).
+
+17. By 16, inj-event(adminProcessesRecovery(Device[],(Device[],missing_chunks_1)),@occ18_2).
+The goal is reached, represented in the following fact:
+inj-event(adminProcessesRecovery(Device[],(Device[],missing_chunks_1)),@occ18_2).
+
+18. The message ((Device[],missing_chunks_1),sign((Device[],missing_chunks_1),skD[])) that the attacker may have by 15 may be received at input {14}.
+So event adminProcessesRecovery(Device[],(Device[],missing_chunks_1)) may be executed at {18} in session @sid.
+inj-event(adminProcessesRecovery(Device[],(Device[],missing_chunks_1)),@occ18_1).
+
+19. By 18, inj-event(adminProcessesRecovery(Device[],(Device[],missing_chunks_1)),@occ18_1).
+The goal is reached, represented in the following fact:
+inj-event(adminProcessesRecovery(Device[],(Device[],missing_chunks_1)),@occ18_1).
+
+20. By 19, inj-event(adminProcessesRecovery(Device[],(Device[],missing_chunks_1)),@occ18_1).
+By 17, inj-event(adminProcessesRecovery(Device[],(Device[],missing_chunks_1)),@occ18_2).
+We have @occ18_1 ≠ @occ18_2.
+The goals for injectivity are reached, combined in the following fact:
+inj-event(adminProcessesRecovery(Device[],(Device[],missing_chunks_1)),@occ18_1) && inj-event(adminProcessesRecovery(Device[],(Device[],missing_chunks_1)),@occ18_2).
+
+
+A more detailed output of the traces is available with
+  set traceDisplay = long.
+
+new skA: key creating skA_2 at {1}
+
+new skD: key creating skD_2 at {2}
+
+out(c, (~M,~M_1)) with ~M = pk(skA_2), ~M_1 = pk(skD_2) at {5}
+
+new fw: firmware creating fw_1 at {7}
+
+event adminSendsFirmware(fw_1) at {10}
+
+out(c, ((~M_2,~M_3),~M_4)) with ~M_2 = newer_version, ~M_3 = hash(fw_1), ~M_4 = sign((newer_version,hash(fw_1)),skA_2) at {11}
+
+out(c, ~M_5) with ~M_5 = fw_1 at {12}
+
+in(c, ((newer_version,~M_3),~M_4)) with ~M_3 = hash(fw_1), ~M_4 = sign((newer_version,hash(fw_1)),skA_2) at {20}
+
+in(c, ~M_5) with ~M_5 = fw_1 at {25}
+
+event deviceAcceptsNewerVersion(newer_version) at {27}
+
+event deviceAcceptsIntegrityVerifiedFirmware(fw_1) at {28}
+
+event deviceAcceptsFirmware(fw_1) at {29}
+
+new missing_chunks: bitstring creating missing_chunks_2 at {30}
+
+event deviceSendsRecovery(Device,(Device,missing_chunks_2)) at {32}
+
+out(c, ((~M_6,~M_7),~M_8)) with ~M_6 = Device, ~M_7 = missing_chunks_2, ~M_8 = sign((Device,missing_chunks_2),skD_2) at {34}
+
+in(c, ((Device,~M_7),~M_8)) with ~M_7 = missing_chunks_2, ~M_8 = sign((Device,missing_chunks_2),skD_2) at {14} in copy a
+
+event adminProcessesRecovery(Device,(Device,missing_chunks_2)) at {18} in copy a (goal)
+
+in(c, ((Device,~M_7),~M_8)) with ~M_7 = missing_chunks_2, ~M_8 = sign((Device,missing_chunks_2),skD_2) at {14} in copy a_1
+
+event adminProcessesRecovery(Device,(Device,missing_chunks_2)) at {18} in copy a_1 (goal)
+
+The event adminProcessesRecovery(Device,(Device,missing_chunks_2)) is executed at {18} in copy a.
+The event adminProcessesRecovery(Device,(Device,missing_chunks_2)) is executed at {18} in copy a_1.
+A trace has been found.
+RESULT inj-event(adminProcessesRecovery(h,msg)) ==> inj-event(deviceSendsRecovery(h,msg)) is false.
+RESULT (but event(adminProcessesRecovery(h,msg)) ==> event(deviceSendsRecovery(h,msg)) is true.)
 
 --------------------------------------------------------------
 Verification summary:
 
 Query event(deviceAcceptsFirmware(fw_1)) ==> event(adminSendsFirmware(fw_1)) is true.
 
-Query event(adminProcessesRecovery(hst)) ==> event(deviceSendsRecovery(hst)) is true.
+Query event(adminProcessesRecovery(h,msg)) ==> event(deviceSendsRecovery(h,msg)) is true.
 
 Query event(deviceAcceptsFirmware(fw_1)) ==> event(deviceAcceptsIntegrityVerifiedFirmware(fw_1)) is true.
 
 Query event(deviceAcceptsNewerVersion(v)) ==> v = newer_version is true.
+
+Query inj-event(adminProcessesRecovery(h,msg)) ==> inj-event(deviceSendsRecovery(h,msg)) is false.
 
 --------------------------------------------------------------
