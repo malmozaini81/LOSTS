@@ -1,0 +1,74 @@
+Device log
+I (4299) wifi:dp: 1, bi: 102400, li: 3, scale listen interval from 307200 us to 307200 us
+I (4299) wifi:set rx beacon pti, rx_bcn_pti: 0, bcn_timeout: 25000, mt_pti: 0, mt_time: 10000
+I (4329) wifi:AP's beacon interval = 102400 us, DTIM period = 1
+I (6529) wifi:<ba-add>idx:0 (ifx:0, 6c:26:36:af:73:0c), tid:6, ssn:5, winSize:64
+I (7529) [DEBUG]: STA got IP: 192.168.0.149, subnet 255.255.255.0, broadcast 192.168.0.255
+I (7529) esp_netif_handlers: sta ip: 192.168.0.149, mask: 255.255.255.0, gw: 192.168.0.1
+I (8129) [DEBUG]: wifi_connect: connected to 4G, IP: 192.168.0.149
+I (8129) [DEBUG]: mesh_task: WiFi connected
+I (8129) [INFO]: 
++-----------------+-----------------+-----------------+
+| Project         | Version         | IDF             |
++-----------------+-----------------+-----------------+
+| OTANet          | 1               | v6.0.1          |
++-----------------+-----------------+-----------------+
++-----------------+-----------------+
+| Build Date      | Build Time      |
++-----------------+-----------------+
+| Sep 24 2026     | 13:27:46        |
++-----------------+-----------------+
++-----------------+-----------------+-----------------+-----------------+
+| MAC             | IP              | Subnet          | Broadcast       |
++-----------------+-----------------+-----------------+-----------------+
+| 90E5B1CC2DB8    | 192.168.0.149   | 255.255.255.0   | 192.168.0.255   |
++-----------------+-----------------+-----------------+-----------------+
+
+I (8199) [DEBUG]: transport_init: transport queue initialized
+I (8209) [DEBUG]: iudp_init: UDP worker operational on port 3333
+I (8239) [DEBUG]: profile_set_flush_target: debug data will send to ip:192.168.0.102,  port:4444
+I (24049) [DEBUG]: ota_handle_packet: OTA accepted: version 2, 621 chunks
+W (27489) [DEBUG]: process_chunk: CRC mismatch chunk 600
+W (27489) [DEBUG]: process_chunk: CRC mismatch chunk 600
+I (31029) [DEBUG]: request_missing_chunks: Requested 17 missing chunks (batch 0)
+I (31229) [DEBUG]: finalize_ota: Firmware verified, flashing...
+I (44109) esp_image: segment 0: paddr=00220020 vaddr=3c0a0020 size=1f700h (128768) map
+I (44129) esp_image: segment 1: paddr=0023f728 vaddr=3fc9a600 size=008f0h (  2288) 
+I (44129) esp_image: segment 2: paddr=00240020 vaddr=42000020 size=98c9ch (625820) map
+I (44189) esp_image: segment 3: paddr=002d8cc4 vaddr=3fc9aef0 size=04ec0h ( 20160) 
+I (44189) esp_image: segment 4: paddr=002ddb8c vaddr=40374000 size=164f4h ( 91380) 
+I (44199) esp_image: segment 5: paddr=002f4088 vaddr=50000000 size=00024h (    36) 
+I (44199) esp_image: segment 0: paddr=00220020 vaddr=3c0a0020 size=1f700h (128768) map
+I (44219) esp_image: segment 1: paddr=0023f728 vaddr=3fc9a600 size=008f0h (  2288) 
+I (44219) esp_image: segment 2: paddr=00240020 vaddr=42000020 size=98c9ch (625820) map
+I (44289) esp_image: segment 3: paddr=002d8cc4 vaddr=3fc9aef0 size=04ec0h ( 20160) 
+I (44289) esp_image: segment 4: paddr=002ddb8c vaddr=40374000 size=164f4h ( 91380) 
+I (44299) esp_image: segment 5: paddr=002f4088 vaddr=50000000 size=00024h (    36) 
+I (44339) [DEBUG]: ota_flash_buffer: firmware applied, rebooting...
+I (44339) [DEBUG]: finalize_ota: OTA success, rebooting...
+
+
+----------------------------
+
+
+admin log
+(venv) mhz@mohammeds-MacBook-Air testing % python3 admin.py /Users/mhz/Documents/OTANet/build/OTANet.bin
+[*] Own IP: 192.168.0.94, MAC: 2CCA160335E1, Broadcast: 192.168.0.255
+  Firmware: /Users/mhz/Documents/OTANet/build/OTANet.bin
+  Size: 868560 bytes (848.2 KB)
+  Version: 2 (0x00000002)
+  SHA‑256: 69811cc19701cbd6f21fff4916e9a976e968c282a04f4e4f3e2a4e2d696844ca
+  Chunks: 621 (chunk size 1400)
+Send? (yes/no): yes
+[*] Sending header...
+HEADER:192.168.0.94:2CCA160335E1:00000002:000D40D0:0000026D:0578:69811cc19701cbd6f21fff4916e9a976e968c282a04f4e4f3e2a4e2d696844ca:0a9a551d44a40a17b2a21076a6d28e96b7aeddb839f5be1e1d27d76747e77fa4f9bcab93cc2c477bde74e7035d6891160382354c28e2b3f713d7077695c34d22
+[*] Sending 621 chunks...
+[DEBUG] Sent chunk 621/621
+[*] All chunks sent. Waiting for missing chunk requests...
+
+[*] Received LOSTS from 192.168.0.149: LOSTS:90E5B1CC2DB8:00000029,00000045,0000007A,00000094,000000C7,000000E1,000000E5,0000011A,00000125,0000016A,00000182,00000188,000001BB,000001D3,0000020C,00000224,0000025D:C3132B3163443B732B889C25B06318198996044352C8B8217BCE584DBA10EFEFD4C197BE847CA86646B57E5960F0BA43326837904F3E8F1C55BD8CE806383AF6
+[DEBUG] Rebroadcast chunk 606/621
+[*] Waiting for further missing requests...
+[*] No missing chunk requests for 10 seconds. OTA complete.
+[+] OTA transmission finished.
+(venv) mhz@mohammeds-MacBook-Air testing % 
