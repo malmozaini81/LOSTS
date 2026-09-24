@@ -1,4 +1,4 @@
-C:\Users\x\Desktop\proverif2.05>proverif.exe secure_ota.pv
+C:\Users\x\Desktop\proverif2.05>proverif.exe "secure_ota.pv"
 Process 0 (that is, the initial process):
 {1}new skA: key;
 {2}new skD: key;
@@ -17,21 +17,24 @@ Process 0 (that is, the initial process):
     {14}let verified_lost: bitstring = verify(devSig,pkD) in
     {15}if (lostMsg = verified_lost) then
     {16}let (sender_identity: host,chunk_list: bitstring) = lostMsg in
-    {17}event adminProcessesLOSTS(sender_identity)
+    {17}event adminProcessesRecovery(sender_identity)
 ) | (
     {18}let skD_1: key = skD in
     {19}in(c, (header_bytes: bitstring,sigA_1: signature));
     {20}let verified_header: bitstring = verify(sigA_1,pkA) in
     {21}if (header_bytes = verified_header) then
-    {22}let (ver: version,h: hashvalue) = header_bytes in
+    {22}let (ver: version,expected_hash: hashvalue) = header_bytes in
     {23}if (ver = newer_version) then
     {24}in(c, fw_received: firmware);
-    {25}if (hash(fw_received) = h) then
-    {26}event deviceAcceptsFirmware(fw_received);
-    {27}new dummy_list: bitstring;
-    {28}let lost_payload: bitstring = (Device,dummy_list) in
-    {29}let dev_sig: signature = sign(lost_payload,skD_1) in
-    {30}out(c, (lost_payload,dev_sig))
+    {25}if (hash(fw_received) = expected_hash) then
+    {26}event deviceAcceptsNewerVersion(ver);
+    {27}event deviceAcceptsIntegrityVerifiedFirmware(fw_received);
+    {28}event deviceAcceptsFirmware(fw_received);
+    {29}new missing_chunks: bitstring;
+    {30}let recovery_payload: bitstring = (Device,missing_chunks) in
+    {31}event deviceSendsRecovery(Device);
+    {32}let dev_sig: signature = sign(recovery_payload,skD_1) in
+    {33}out(c, (recovery_payload,dev_sig))
 )
 
 --  Process 1 (that is, process 0, with let moved downwards):
@@ -52,21 +55,24 @@ Process 0 (that is, the initial process):
     {14}let verified_lost: bitstring = verify(devSig,pkD) in
     {15}if (lostMsg = verified_lost) then
     {16}let (sender_identity: host,chunk_list: bitstring) = lostMsg in
-    {17}event adminProcessesLOSTS(sender_identity)
+    {17}event adminProcessesRecovery(sender_identity)
 ) | (
     {19}in(c, (header_bytes: bitstring,sigA_1: signature));
     {20}let verified_header: bitstring = verify(sigA_1,pkA) in
     {21}if (header_bytes = verified_header) then
-    {22}let (ver: version,h: hashvalue) = header_bytes in
+    {22}let (ver: version,expected_hash: hashvalue) = header_bytes in
     {23}if (ver = newer_version) then
     {24}in(c, fw_received: firmware);
-    {25}if (hash(fw_received) = h) then
-    {26}event deviceAcceptsFirmware(fw_received);
-    {27}new dummy_list: bitstring;
-    {28}let lost_payload: bitstring = (Device,dummy_list) in
+    {25}if (hash(fw_received) = expected_hash) then
+    {26}event deviceAcceptsNewerVersion(ver);
+    {27}event deviceAcceptsIntegrityVerifiedFirmware(fw_received);
+    {28}event deviceAcceptsFirmware(fw_received);
+    {29}new missing_chunks: bitstring;
+    {31}event deviceSendsRecovery(Device);
+    {30}let recovery_payload: bitstring = (Device,missing_chunks) in
     {18}let skD_1: key = skD in
-    {29}let dev_sig: signature = sign(lost_payload,skD_1) in
-    {30}out(c, (lost_payload,dev_sig))
+    {32}let dev_sig: signature = sign(recovery_payload,skD_1) in
+    {33}out(c, (recovery_payload,dev_sig))
 )
 
 -- Query event(deviceAcceptsFirmware(fw_1)) ==> event(adminSendsFirmware(fw_1)) in process 1.
@@ -75,18 +81,34 @@ Completing...
 Starting query event(deviceAcceptsFirmware(fw_1)) ==> event(adminSendsFirmware(fw_1))
 goal reachable: b-event(adminSendsFirmware(fw[])) -> event(deviceAcceptsFirmware(fw[]))
 RESULT event(deviceAcceptsFirmware(fw_1)) ==> event(adminSendsFirmware(fw_1)) is true.
--- Query event(adminProcessesLOSTS(hst)) ==> hst = Device[] in process 1.
+-- Query event(adminProcessesRecovery(hst)) ==> event(deviceSendsRecovery(hst)) in process 1.
 Translating the process into Horn clauses...
 Completing...
-Starting query event(adminProcessesLOSTS(hst)) ==> hst = Device[]
-goal reachable: event(adminProcessesLOSTS(Device[]))
-RESULT event(adminProcessesLOSTS(hst)) ==> hst = Device[] is true.
+Starting query event(adminProcessesRecovery(hst)) ==> event(deviceSendsRecovery(hst))
+goal reachable: b-event(deviceSendsRecovery(Device[])) -> event(adminProcessesRecovery(Device[]))
+RESULT event(adminProcessesRecovery(hst)) ==> event(deviceSendsRecovery(hst)) is true.
+-- Query event(deviceAcceptsFirmware(fw_1)) ==> event(deviceAcceptsIntegrityVerifiedFirmware(fw_1)) in process 1.
+Translating the process into Horn clauses...
+Completing...
+Starting query event(deviceAcceptsFirmware(fw_1)) ==> event(deviceAcceptsIntegrityVerifiedFirmware(fw_1))
+goal reachable: b-event(deviceAcceptsIntegrityVerifiedFirmware(fw[])) -> event(deviceAcceptsFirmware(fw[]))
+RESULT event(deviceAcceptsFirmware(fw_1)) ==> event(deviceAcceptsIntegrityVerifiedFirmware(fw_1)) is true.
+-- Query event(deviceAcceptsNewerVersion(v)) ==> v = newer_version in process 1.
+Translating the process into Horn clauses...
+Completing...
+Starting query event(deviceAcceptsNewerVersion(v)) ==> v = newer_version
+goal reachable: event(deviceAcceptsNewerVersion(newer_version))
+RESULT event(deviceAcceptsNewerVersion(v)) ==> v = newer_version is true.
 
 --------------------------------------------------------------
 Verification summary:
 
 Query event(deviceAcceptsFirmware(fw_1)) ==> event(adminSendsFirmware(fw_1)) is true.
 
-Query event(adminProcessesLOSTS(hst)) ==> hst = Device[] is true.
+Query event(adminProcessesRecovery(hst)) ==> event(deviceSendsRecovery(hst)) is true.
+
+Query event(deviceAcceptsFirmware(fw_1)) ==> event(deviceAcceptsIntegrityVerifiedFirmware(fw_1)) is true.
+
+Query event(deviceAcceptsNewerVersion(v)) ==> v = newer_version is true.
 
 --------------------------------------------------------------
