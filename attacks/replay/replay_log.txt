@@ -1,0 +1,20 @@
+(venv) mhz@mohammeds-MacBook-Air testing % python3 admin.py /Users/mhz/Documents/OTANet/build/OTANet.bin
+[*] Own IP: 192.168.0.94, MAC: 2CCA160335E1, Broadcast: 192.168.0.255
+  Firmware: /Users/mhz/Documents/OTANet/build/OTANet.bin
+  Size: 868560 bytes (848.2 KB)
+  Version: 8 (0x00000008)
+  SHA‑256: 12840adb4e6630af071950b5660b8e23701305aa8f24e45bcb2f32dd6e557ac8
+  Chunks: 621 (chunk size 1400)
+Send? (yes/no): yes
+[*] Sending header...
+HEADER:192.168.0.94:2CCA160335E1:00000008:000D40D0:0000026D:0578:12840adb4e6630af071950b5660b8e23701305aa8f24e45bcb2f32dd6e557ac8:1fe1983f509d69a9ede2e2cbfcf7bbef30f3985438f04741594c0b6a1c6c49f1d2999d6cd23bb2873ac2558e867ff19de736343a69e3e63cd664ad0d4741d2bb
+[*] Sending 621 chunks...
+[DEBUG] Sent chunk 621/621
+[*] All chunks sent. Waiting for missing chunk requests...
+
+[*] Received LOSTS from 192.168.0.21: LOSTS:90E5B1CC2DB8:00000033,00000083,000000D4,00000124,000001C7,00000218,00000269:243F4593B8E7658FE6038C272AA9174C99146E9FD59E35C893BB5CFA5D3C0DB87606926157DCC6D94D22DBEE00752A5FE26E91FCCA90101816BF599CE8403F44
+[DEBUG] Rebroadcast chunk 618/621
+[*] Waiting for further missing requests...
+[*] No missing chunk requests for 10 seconds. OTA complete.
+[+] OTA transmission finished.
+(venv) mhz@mohammeds-MacBook-Air testing % 
