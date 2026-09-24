@@ -1,0 +1,29 @@
+I (4209) wifi:dp: 1, bi: 102400, li: 3, scale listen interval from 307200 us to 307200 us
+I (4219) wifi:set rx beacon pti, rx_bcn_pti: 0, bcn_timeout: 25000, mt_pti: 0, mt_time: 10000
+I (4269) wifi:AP's beacon interval = 102400 us, DTIM period = 1
+I (6459) wifi:<ba-add>idx:0 (ifx:0, 6c:26:36:af:73:0c), tid:6, ssn:5, winSize:64
+I (7459) [DEBUG]: STA got IP: 192.168.0.149, subnet 255.255.255.0, broadcast 192.168.0.255
+I (7459) esp_netif_handlers: sta ip: 192.168.0.149, mask: 255.255.255.0, gw: 192.168.0.1
+I (8129) [DEBUG]: wifi_connect: connected to 4G, IP: 192.168.0.149
+I (8129) [DEBUG]: mesh_task: WiFi connected
+I (8129) [INFO]: 
++-----------------+-----------------+-----------------+
+| Project         | Version         | IDF             |
++-----------------+-----------------+-----------------+
+| OTANet          | 8               | v6.0.1          |
++-----------------+-----------------+-----------------+
++-----------------+-----------------+
+| Build Date      | Build Time      |
++-----------------+-----------------+
+| Sep 22 2026     | 19:30:09        |
++-----------------+-----------------+
++-----------------+-----------------+-----------------+-----------------+
+| MAC             | IP              | Subnet          | Broadcast       |
++-----------------+-----------------+-----------------+-----------------+
+| 90E5B1CC2DB8    | 192.168.0.149   | 255.255.255.0   | 192.168.0.255   |
++-----------------+-----------------+-----------------+-----------------+
+
+I (8199) [DEBUG]: transport_init: transport queue initialized
+I (8209) [DEBUG]: iudp_init: UDP worker operational on port 3333
+I (8239) [DEBUG]: profile_set_flush_target: debug data will send to ip:192.168.0.102,  port:4444
+E (16189) [DEBUG]: ota_handle_packet: Admin signature verification failed
